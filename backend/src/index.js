@@ -7,6 +7,10 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 
+
+console.log("ENV FILE LOADED");
+console.log("MONGODB_URI =", process.env.MONGODB_URI);
+
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const chatRoutes = require('./routes/chat');
@@ -20,11 +24,29 @@ app.use(helmet());
 app.use(morgan('combined'));
 
 // CORS
+// app.use(cors({
+//   origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:3000'],
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://doc-9elb0up1b-fuzailahmedh-8355s-projects.vercel.app"
+];
+
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
 }));
 
 // Rate limiting
