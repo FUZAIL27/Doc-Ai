@@ -33,20 +33,23 @@ app.use(morgan('combined'));
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://doc-ai-flax.vercel.app",
   "https://doc-9elb0up1b-fuzailahmedh-8355s-projects.vercel.app"
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin(origin, callback) {
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    callback(new Error("Not allowed by CORS"));
+    return callback(null, false);
   },
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Rate limiting
