@@ -34,7 +34,6 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://doc-ai-flax.vercel.app",
-  "https://doc-9elb0up1b-fuzailahmedh-8355s-projects.vercel.app"
 ];
 
 app.use(cors({
