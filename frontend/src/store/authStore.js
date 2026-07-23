@@ -4,17 +4,16 @@ import api from '../utils/api'
 
 const useAuthStore = create(
   persist(
-    (set, get) => ({
-      user: null,
-      token: null,
+    (set) => ({
+      user:      null,
+      token:     null,
       isLoading: false,
-      error: null,
+      error:     null,
 
       signup: async (name, email, password) => {
         set({ isLoading: true, error: null })
         try {
           const { data } = await api.post('/auth/signup', { name, email, password })
-          api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
           set({ user: data.user, token: data.token, isLoading: false })
           return { success: true }
         } catch (err) {
@@ -28,7 +27,6 @@ const useAuthStore = create(
         set({ isLoading: true, error: null })
         try {
           const { data } = await api.post('/auth/login', { email, password })
-          api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
           set({ user: data.user, token: data.token, isLoading: false })
           return { success: true }
         } catch (err) {
@@ -39,22 +37,15 @@ const useAuthStore = create(
       },
 
       logout: () => {
-        delete api.defaults.headers.common['Authorization']
+        localStorage.removeItem('docmind-auth')
         set({ user: null, token: null, error: null })
       },
 
       updateUser: (user) => set({ user }),
-
-      initAuth: () => {
-        const { token } = get()
-        if (token) {
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        }
-      }
     }),
     {
       name: 'docmind-auth',
-      partialize: (state) => ({ token: state.token, user: state.user })
+      partialize: (s) => ({ token: s.token, user: s.user }),
     }
   )
 )
