@@ -4,82 +4,112 @@
 
 @layer base {
   :root {
-    --background: 222 47% 4%;
-    --foreground: 213 31% 91%;
-    --card: 222 47% 8%;
-    --border: 222 47% 15%;
-    --primary: 239 84% 67%;
-    --radius: 0.75rem;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   * {
     @apply border-dark-border;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-dark-300 text-slate-100 font-sans antialiased;
     min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
   }
 
-  ::selection {
-    @apply bg-brand-600/40;
-  }
+  ::selection { @apply bg-brand-600/40; }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-dark-border rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-brand-600/50;
+  ::-webkit-scrollbar        { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track  { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb  { @apply bg-dark-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-brand-600/50; }
+
+  /* Prevent zoom on input focus on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px;
   }
 }
 
 @layer components {
-  .glass {
-    @apply bg-white/5 backdrop-blur-md border border-white/10;
-  }
-
+  /* ── Cards ── */
   .glass-card {
     @apply bg-dark-card/80 backdrop-blur-md border border-dark-border rounded-xl;
   }
 
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700
+           active:bg-brand-800 active:scale-95 text-white font-medium px-4 py-2
+           rounded-lg transition-all duration-150 disabled:opacity-50
+           disabled:cursor-not-allowed select-none touch-manipulation;
   }
-
   .btn-secondary {
-    @apply bg-dark-hover hover:bg-dark-border text-slate-300 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2;
+    @apply inline-flex items-center gap-2 bg-dark-hover hover:bg-dark-border
+           active:scale-95 text-slate-300 hover:text-white font-medium px-4 py-2
+           rounded-lg transition-all duration-150 select-none touch-manipulation;
   }
-
   .btn-ghost {
-    @apply hover:bg-dark-hover text-slate-400 hover:text-white font-medium px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2;
+    @apply inline-flex items-center gap-2 hover:bg-dark-hover active:bg-dark-border
+           active:scale-95 text-slate-400 hover:text-white font-medium px-3 py-2
+           rounded-lg transition-all duration-150 select-none touch-manipulation;
+  }
+  .btn-danger {
+    @apply inline-flex items-center gap-2 bg-red-600 hover:bg-red-700
+           active:scale-95 text-white font-medium px-4 py-2 rounded-lg
+           transition-all duration-150 select-none touch-manipulation;
   }
 
+  /* ── Inputs ── */
   .input-field {
-    @apply w-full bg-dark-200 border border-dark-border rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200;
+    @apply w-full bg-dark-200 border border-dark-border rounded-lg px-4 py-3
+           text-slate-100 placeholder-slate-500 focus:outline-none
+           focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500
+           transition-all duration-150;
+    font-size: 16px; /* prevent iOS zoom */
   }
 
+  /* ── Sidebar link ── */
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-hover transition-all duration-200 cursor-pointer text-sm font-medium;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400
+           hover:text-white hover:bg-dark-hover active:bg-dark-border
+           transition-all duration-150 text-sm font-medium cursor-pointer
+           select-none touch-manipulation;
   }
-
   .sidebar-link.active {
     @apply bg-brand-600/20 text-brand-400 border border-brand-600/30;
   }
 
+  /* ── Tag / Badge ── */
   .tag {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
   }
 
+  /* ── Shimmer skeleton ── */
   .shimmer {
     background: linear-gradient(90deg, #1e1e2e 25%, #2a2a3e 50%, #1e1e2e 75%);
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
+  }
+
+  /* ── Safe area padding for mobile bottom nav ── */
+  .safe-area-pb {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  }
+
+  /* ── Mobile touch card ── */
+  .touch-card {
+    @apply active:scale-[0.98] transition-transform duration-100;
   }
 }

@@ -7,36 +7,19 @@ import api from '../utils/api'
 import useAuthStore from '../store/authStore'
 import { formatRelativeDate, getFileColor } from '../utils/helpers'
 import { CardSkeleton, DocumentSkeleton } from '../components/ui/LoadingSkeleton'
-import Badge from '../components/ui/Badge'
 
-const StatCard = ({ icon: Icon, label, value, sub, color = 'brand', delay = 0 }) => {
-  const colors = {
-    brand: 'bg-brand-600/20 text-brand-400',
-    green: 'bg-green-500/20 text-green-400',
-    purple: 'bg-purple-500/20 text-purple-400',
-    orange: 'bg-orange-500/20 text-orange-400',
-  }
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="glass-card p-5 hover:border-brand-600/30 transition-colors"
-    >
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${colors[color]}`}>
-        <Icon size={20} />
-      </div>
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm font-medium text-slate-300">{label}</div>
-      {sub && <div className="text-xs text-slate-500 mt-1">{sub}</div>}
-    </motion.div>
-  )
-}
+const CustomTooltip = ({ active, payload, label }) =>
+  active && payload?.length ? (
+    <div className="glass-card px-3 py-2 text-xs shadow-xl">
+      <p className="text-slate-400">{label}</p>
+      <p className="text-white font-medium">Uploads: {payload[0].value}</p>
+    </div>
+  ) : null
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
-  const [data, setData] = useState(null)
+  const { user }  = useAuthStore()
+  const navigate  = useNavigate()
+  const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,197 +29,170 @@ export default function DashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const chartData = data?.uploadsByDay?.map(d => ({ date: d._id?.slice(5), uploads: d.count })) || []
+  const chartData = data?.uploadsByDay?.map(d => ({ date:d._id?.slice(5), uploads:d.count })) || []
+
+  const STATS = [
+    { icon:FileText,     label:'Documents',   value:data?.stats?.totalDocs  || 0, sub:`+${data?.stats?.recentDocs  ||0} this week`, color:'text-brand-400',  bg:'bg-brand-600/10'  },
+    { icon:MessageSquare,label:'AI Chats',    value:data?.stats?.totalChats || 0, sub:`+${data?.stats?.recentChats ||0} this week`, color:'text-green-400',  bg:'bg-green-600/10'  },
+    { icon:Zap,          label:'Tokens Used', value:`${((data?.stats?.totalTokensUsed||0)/1000).toFixed(1)}K`,                    color:'text-purple-400', bg:'bg-purple-600/10' },
+    { icon:TrendingUp,   label:'This Week',   value:data?.stats?.recentDocs  || 0,                                                color:'text-orange-400', bg:'bg-orange-600/10' },
+  ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+
       {/* Welcome */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
+      <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
             Good day, {user?.name?.split(' ')[0]} 👋
           </h2>
-          <p className="text-slate-400 mt-1">Here's what's happening with your documents</p>
+          <p className="text-slate-400 text-xs sm:text-sm mt-0.5">Here's your document activity</p>
         </div>
-        <button onClick={() => navigate('/upload')} className="btn-primary">
-          <Upload size={16} /> Upload Document
+        <button onClick={() => navigate('/upload')} className="btn-primary self-start sm:self-auto text-sm">
+          <Upload size={15}/> Upload Document
         </button>
       </motion.div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? (
-          Array(4).fill(0).map((_, i) => <CardSkeleton key={i} />)
-        ) : (
-          <>
-            <StatCard icon={FileText} label="Total Documents" value={data?.stats?.totalDocs || 0} sub={`+${data?.stats?.recentDocs || 0} this week`} color="brand" delay={0} />
-            <StatCard icon={MessageSquare} label="AI Chats" value={data?.stats?.totalChats || 0} sub={`+${data?.stats?.recentChats || 0} this week`} color="green" delay={0.1} />
-            <StatCard icon={Zap} label="Tokens Used" value={`${((data?.stats?.totalTokensUsed || 0) / 1000).toFixed(1)}K`} color="purple" delay={0.2} />
-            <StatCard icon={TrendingUp} label="Documents This Week" value={data?.stats?.recentDocs || 0} color="orange" delay={0.3} />
-          </>
-        )}
+      {/* Stats 2×2 on mobile, 4 across on lg */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        {loading
+          ? Array(4).fill(0).map((_,i) => <CardSkeleton key={i}/>)
+          : STATS.map(({ icon:Icon, label, value, sub, color, bg }, i) => (
+            <motion.div key={i} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.07 }}
+              className="glass-card p-3 sm:p-5 hover:border-brand-600/30 transition-colors">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 ${bg} rounded-lg flex items-center justify-center mb-2.5 sm:mb-3`}>
+                <Icon size={16} className={color}/>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-white mb-0.5">{value}</div>
+              <div className="text-[11px] sm:text-sm font-medium text-slate-300 leading-tight">{label}</div>
+              {sub && <div className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{sub}</div>}
+            </motion.div>
+          ))
+        }
       </div>
 
-      {/* Chart + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upload activity chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass-card p-5 lg:col-span-2"
-        >
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <TrendingUp size={16} className="text-brand-400" />
-            Upload Activity (30 days)
+      {/* Chart + Types */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
+          className="glass-card p-4 sm:p-5 lg:col-span-2">
+          <h3 className="text-xs sm:text-sm font-semibold text-slate-300 mb-3 sm:mb-4 flex items-center gap-2">
+            <TrendingUp size={14} className="text-brand-400"/> Upload Activity (30 days)
           </h3>
           {loading ? (
-            <div className="h-48 shimmer rounded-lg" />
+            <div className="h-36 sm:h-48 shimmer rounded-lg"/>
           ) : chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={140}>
               <AreaChart data={chartData}>
                 <defs>
-                  <linearGradient id="uploadGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <linearGradient id="upGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid #2e2e4a', borderRadius: '8px', color: '#e2e8f0', fontSize: 12 }}
-                  cursor={{ stroke: '#6366f1', strokeWidth: 1 }}
-                />
-                <Area type="monotone" dataKey="uploads" stroke="#6366f1" fill="url(#uploadGrad)" strokeWidth={2} dot={false} />
+                <XAxis dataKey="date" tick={{ fill:'#64748b', fontSize:10 }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fill:'#64748b', fontSize:10 }} axisLine={false} tickLine={false} allowDecimals={false} width={22}/>
+                <Tooltip content={<CustomTooltip/>}/>
+                <Area type="monotone" dataKey="uploads" stroke="#6366f1" fill="url(#upGrad)" strokeWidth={2} dot={false}/>
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-slate-500 text-sm">
-              No upload activity yet. <button onClick={() => navigate('/upload')} className="text-brand-400 ml-1 hover:underline">Upload your first document</button>
+            <div className="h-36 flex flex-col items-center justify-center text-slate-600 text-sm gap-2">
+              <TrendingUp size={24} className="text-slate-700"/>
+              <p className="text-xs">No activity yet</p>
+              <button onClick={() => navigate('/upload')} className="text-brand-400 hover:underline text-xs">Upload first doc →</button>
             </div>
           )}
         </motion.div>
 
-        {/* Doc types */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass-card p-5"
-        >
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">Document Types</h3>
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.38 }}
+          className="glass-card p-4 sm:p-5">
+          <h3 className="text-xs sm:text-sm font-semibold text-slate-300 mb-3 sm:mb-4">Document Types</h3>
           {loading ? (
-            <div className="space-y-3">
-              {[1,2,3].map(i => <div key={i} className="shimmer h-8 rounded-lg" />)}
-            </div>
+            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="shimmer h-7 rounded-lg"/>)}</div>
           ) : data?.docsByType?.length > 0 ? (
-            <div className="space-y-3">
-              {data.docsByType.map(({ _id: type, count }) => {
-                const total = data.stats.totalDocs || 1
-                const pct = Math.round((count / total) * 100)
+            <div className="space-y-2.5 sm:space-y-3">
+              {data.docsByType.map(({ _id:type, count }) => {
+                const pct = Math.round((count / (data.stats.totalDocs||1)) * 100)
                 return (
                   <div key={type}>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-xs mb-1">
                       <span className="text-slate-300 uppercase font-medium">{type}</span>
                       <span className="text-slate-500">{count} ({pct}%)</span>
                     </div>
-                    <div className="h-2 bg-dark-border rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.6, delay: 0.6 }}
-                        className="h-full bg-brand-500 rounded-full"
-                      />
+                    <div className="h-1.5 sm:h-2 bg-dark-border rounded-full overflow-hidden">
+                      <motion.div initial={{ width:0 }} animate={{ width:`${pct}%` }} transition={{ duration:0.6, delay:0.4 }}
+                        className="h-full bg-brand-500 rounded-full"/>
                     </div>
                   </div>
                 )
               })}
             </div>
           ) : (
-            <div className="text-slate-500 text-sm text-center py-8">No documents yet</div>
+            <div className="text-slate-600 text-xs text-center py-6">No docs yet</div>
           )}
         </motion.div>
       </div>
 
-      {/* Recent documents + chats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="glass-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-              <FileText size={16} className="text-brand-400" /> Recent Documents
-            </h3>
-            <button onClick={() => navigate('/documents')} className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1">
-              View all <ArrowRight size={12} />
-            </button>
-          </div>
-          {loading ? (
-            <div className="space-y-3">
-              {[1,2,3].map(i => <DocumentSkeleton key={i} />)}
-            </div>
-          ) : data?.recentDocuments?.length > 0 ? (
-            <div className="space-y-2">
-              {data.recentDocuments.map(doc => (
-                <div
-                  key={doc._id}
-                  onClick={() => navigate(`/documents/${doc._id}`)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-dark-hover cursor-pointer transition-colors group"
-                >
-                  <div className={`tag ${getFileColor(doc.fileType)} text-xs font-mono flex-shrink-0`}>
-                    {doc.fileType?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">{doc.title}</p>
-                    <p className="text-xs text-slate-500">{formatRelativeDate(doc.createdAt)}</p>
-                  </div>
+      {/* Recent Docs + Chats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
+        {[
+          {
+            title:'Recent Documents', key:'recentDocuments', icon:FileText, link:'/documents',
+            render: doc => (
+              <div key={doc._id} onClick={() => navigate(`/documents/${doc._id}`)}
+                className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg hover:bg-dark-hover active:bg-dark-border cursor-pointer transition-colors group touch-card">
+                <div className={`tag ${getFileColor(doc.fileType)} text-[10px] flex-shrink-0`}>{doc.fileType?.toUpperCase()}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">{doc.title}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-500">{formatRelativeDate(doc.createdAt)}</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileText size={32} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm mb-3">No documents yet</p>
-              <button onClick={() => navigate('/upload')} className="btn-primary text-sm">Upload First Document</button>
-            </div>
-          )}
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="glass-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-              <Clock size={16} className="text-brand-400" /> Recent Chats
-            </h3>
-            <button onClick={() => navigate('/chat')} className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1">
-              View all <ArrowRight size={12} />
-            </button>
-          </div>
-          {loading ? (
-            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="shimmer h-14 rounded-lg" />)}</div>
-          ) : data?.recentChats?.length > 0 ? (
-            <div className="space-y-2">
-              {data.recentChats.map(chat => (
-                <div
-                  key={chat._id}
-                  onClick={() => navigate(`/chat/${chat._id}`)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-dark-hover cursor-pointer transition-colors group"
-                >
-                  <div className="w-8 h-8 bg-brand-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MessageSquare size={14} className="text-brand-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">{chat.title}</p>
-                    <p className="text-xs text-slate-500">{formatRelativeDate(chat.updatedAt)}</p>
-                  </div>
+              </div>
+            )
+          },
+          {
+            title:'Recent Chats', key:'recentChats', icon:Clock, link:'/chat',
+            render: chat => (
+              <div key={chat._id} onClick={() => navigate(`/chat/${chat._id}`)}
+                className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg hover:bg-dark-hover active:bg-dark-border cursor-pointer transition-colors group touch-card">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MessageSquare size={13} className="text-brand-400"/>
                 </div>
-              ))}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">{chat.title}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-500">{formatRelativeDate(chat.updatedAt)}</p>
+                </div>
+              </div>
+            )
+          },
+        ].map(({ title, key, icon:Icon, link, render }, idx) => (
+          <motion.div key={idx} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5+idx*0.08 }}
+            className="glass-card p-3 sm:p-5">
+            <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-1.5 sm:gap-2">
+                <Icon size={13} className="text-brand-400"/> {title}
+              </h3>
+              <button onClick={() => navigate(link)} className="text-[11px] sm:text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                View all <ArrowRight size={10}/>
+              </button>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <MessageSquare size={32} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm mb-3">No chats yet</p>
-              <button onClick={() => navigate('/chat')} className="btn-primary text-sm">Start a Chat</button>
-            </div>
-          )}
-        </motion.div>
+            {loading ? (
+              <div className="space-y-1.5">{[1,2,3].map(i => <div key={i} className="shimmer h-10 rounded-lg"/>)}</div>
+            ) : data?.[key]?.length > 0 ? (
+              <div className="space-y-0.5">{data[key].map(render)}</div>
+            ) : (
+              <div className="text-center py-6 sm:py-8">
+                <Icon size={24} className="text-slate-600 mx-auto mb-2"/>
+                <p className="text-slate-500 text-xs mb-2">Nothing here yet</p>
+                <button onClick={() => navigate(key==='recentDocuments' ? '/upload' : '/chat')}
+                  className="btn-primary text-xs mx-auto justify-center px-3 py-1.5">
+                  {key==='recentDocuments' ? <><Upload size={12}/> Upload</> : <><MessageSquare size={12}/> New Chat</>}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ))}
       </div>
     </div>
   )
